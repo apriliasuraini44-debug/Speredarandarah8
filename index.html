@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jelajah Sistem Peredaran Darah Manusia - IPA Kelas 8</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bloodRed: '#dc2626',
+                        bloodDark: '#991b1b',
+                        bloodLight: '#fee2e2',
+                        oxygenBlue: '#2563eb',
+                        oxygenLight: '#dbeafe',
+                        cardioGreen: '#16a34a',
+                        cardioLight: '#dcfce7',
+                        accentYellow: '#eab308'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Heartbeat Animation */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.08); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.08); }
+            70% { transform: scale(1); }
+        }
+        .animate-heartbeat {
+            animation: heartbeat 1.3s infinite ease-in-out;
+            transform-origin: center;
+        }
+        .animate-heartbeat-fast {
+            animation: heartbeat 0.7s infinite ease-in-out;
+            transform-origin: center;
+        }
+
+        /* Pulse Ring */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-effect {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+
+        /* Print Styling */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-report, #printable-report * {
+                visibility: visible;
+            }
+            #printable-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* SVG Heart interactive parts hover */
+        .heart-part {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .heart-part:hover {
+            filter: drop-shadow(0px 0px 8px rgba(220, 38, 38, 0.8));
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-slate-50 text-slate-800">
+
+    <!-- KONFIGURASI APLIKASI (EDIT DI SINI) -->
+    <script>
+        const CONFIG = {
+            // EDIT DI SINI: Masukkan URL Web App Google Apps Script Anda
+            GOOGLE_SCRIPT_URL: "", 
+            // EDIT DI SINI: Masukkan URL Google Docs berisi rangkuman/LKPD
+            GOOGLE_DOCS_URL: "https://docs.google.com", 
+            // EDIT DI SINI: Nama Sekolah
+            SCHOOL_NAME: "SMP Negeri 1 Indonesia", 
+            // EDIT DI SINI: Nama Guru Pengampu
+            TEACHER_NAME: "Guru IPA SMP", 
+            // EDIT DI SINI: Kelas/Tingkat
+            CLASS_NAME: "Kelas VIII SMP" 
+        };
+    </script>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('beranda')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-bloodRed to-rose-500 flex items-center justify-center text-white shadow-md shadow-bloodRed/30 animate-heartbeat">
+                        <i class="fa-solid fa-heart-pulse text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-800 text-base sm:text-lg leading-tight">JELAJAH PEREDARAN DARAH</h1>
+                        <p class="text-xs text-slate-500 font-medium">IPA Kelas 8 • Virtual Lab</p>
+                    </div>
+                </div>
+
+                <!-- User Quick Info & Level -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <div id="user-badge-bar" class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-700">
+                        <span id="nav-user-name"><i class="fa-solid fa-user-graduate text-slate-500 mr-1"></i> Tamu</span>
+                        <span class="text-slate-300">|</span>
+                        <span id="nav-user-level" class="text-amber-600"><i class="fa-solid fa-star text-amber-500"></i> Level 1</span>
+                        <span class="text-slate-300">|</span>
+                        <span id="nav-user-xp" class="text-bloodRed font-bold"><i class="fa-solid fa-bolt text-amber-500"></i> 0 XP</span>
+                    </div>
+
+                    <!-- Google Docs Button -->
+                    <button onclick="openGoogleDocs()" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                        <i class="fa-solid fa-file-lines mr-1.5"></i> Google Docs
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="flex items-center md:hidden space-x-2">
+                    <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN NAVBAR LINKS -->
+        <nav class="hidden md:block bg-slate-100/80 border-t border-slate-200/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between space-x-1 py-1 text-xs font-medium overflow-x-auto">
+                    <button onclick="navigateTo('beranda')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap active-nav" data-page="beranda">
+                        <i class="fa-solid fa-house"></i> <span>Beranda</span>
+                    </button>
+                    <button onclick="navigateTo('jantung')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="jantung">
+                        <i class="fa-solid fa-heart text-bloodRed"></i> <span>Jelajah Jantung</span>
+                    </button>
+                    <button onclick="navigateTo('darah')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="darah">
+                        <i class="fa-solid fa-droplet text-rose-600"></i> <span>Komponen Darah</span>
+                    </button>
+                    <button onclick="navigateTo('pembuluh')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="pembuluh">
+                        <i class="fa-solid fa-diagram-project text-blue-600"></i> <span>Pembuluh Darah</span>
+                    </button>
+                    <button onclick="navigateTo('simulasi')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="simulasi">
+                        <i class="fa-solid fa-arrows-spin text-purple-600"></i> <span>Simulasi Peredaran</span>
+                    </button>
+                    <button onclick="navigateTo('gangguan')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="gangguan">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> <span>Gangguan</span>
+                    </button>
+                    <button onclick="navigateTo('hidup-sehat')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="hidup-sehat">
+                        <i class="fa-solid fa-apple-whole text-emerald-600"></i> <span>Hidup Sehat</span>
+                    </button>
+                    <button onclick="navigateTo('aktivitas')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="aktivitas">
+                        <i class="fa-solid fa-gamepad text-indigo-600"></i> <span>Aktivitas & Lab</span>
+                    </button>
+                    <button onclick="navigateTo('pretest')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="pretest">
+                        <i class="fa-solid fa-pen-to-square text-orange-600"></i> <span>Pre-Test</span>
+                    </button>
+                    <button onclick="navigateTo('posttest')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="posttest">
+                        <i class="fa-solid fa-graduation-cap text-emerald-600"></i> <span>Post-Test</span>
+                    </button>
+                    <button onclick="navigateTo('hasil')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="hasil">
+                        <i class="fa-solid fa-award text-amber-500"></i> <span>Hasil Belajar</span>
+                    </button>
+                    <button onclick="navigateTo('dashboard')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="dashboard">
+                        <i class="fa-solid fa-chart-line text-slate-600"></i> <span>Dashboard Guru</span>
+                    </button>
+                    <button onclick="navigateTo('petunjuk')" class="nav-btn px-3 py-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-700 flex items-center space-x-1.5 whitespace-nowrap" data-page="petunjuk">
+                        <i class="fa-solid fa-circle-question text-teal-600"></i> <span>Panduan</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MOBILE NAV MENU -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-1">
+            <div class="pb-2 mb-2 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
+                <span id="mobile-user-info"><i class="fa-solid fa-user-graduate"></i> Tamu</span>
+                <span id="mobile-user-xp" class="text-bloodRed"><i class="fa-solid fa-bolt"></i> 0 XP</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <button onclick="navigateTo('beranda'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-house text-slate-600 mr-1.5"></i> Beranda</button>
+                <button onclick="navigateTo('jantung'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-heart text-bloodRed mr-1.5"></i> Jantung</button>
+                <button onclick="navigateTo('darah'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-droplet text-rose-600 mr-1.5"></i> Komponen Darah</button>
+                <button onclick="navigateTo('pembuluh'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-diagram-project text-blue-600 mr-1.5"></i> Pembuluh Darah</button>
+                <button onclick="navigateTo('simulasi'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-arrows-spin text-purple-600 mr-1.5"></i> Simulasi Aliran</button>
+                <button onclick="navigateTo('gangguan'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1.5"></i> Gangguan</button>
+                <button onclick="navigateTo('hidup-sehat'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-apple-whole text-emerald-600 mr-1.5"></i> Hidup Sehat</button>
+                <button onclick="navigateTo('aktivitas'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-gamepad text-indigo-600 mr-1.5"></i> Aktivitas & Lab</button>
+                <button onclick="navigateTo('pretest'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-pen-to-square text-orange-600 mr-1.5"></i> Pre-Test</button>
+                <button onclick="navigateTo('posttest'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-graduation-cap text-emerald-600 mr-1.5"></i> Post-Test</button>
+                <button onclick="navigateTo('hasil'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-award text-amber-500 mr-1.5"></i> Hasil Belajar</button>
+                <button onclick="navigateTo('dashboard'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-chart-line text-slate-600 mr-1.5"></i> Dashboard Guru</button>
+                <button onclick="navigateTo('petunjuk'); toggleMobileMenu()" class="p-2 text-left bg-slate-50 rounded font-medium"><i class="fa-solid fa-circle-question text-teal-600 mr-1.5"></i> Panduan Guru</button>
+                <button onclick="openGoogleDocs(); toggleMobileMenu()" class="p-2 text-left bg-blue-50 text-blue-700 rounded font-medium"><i class="fa-solid fa-file-lines text-blue-600 mr-1.5"></i> Google Docs</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER UTAMA -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ==================== PAGE 1: BERANDA ==================== -->
+        <section id="page-beranda" class="page-section space-y-8">
+            <!-- Hero Section -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-bloodDark to-slate-900 text-white p-8 sm:p-12 shadow-xl">
+                <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-bloodRed/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-bloodRed/30 text-rose-200 border border-bloodRed/40">
+                        <i class="fa-solid fa-microscope mr-1.5"></i> Laboratorium Virtual IPA SMP Kelas 8
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                        JELAJAH SISTEM PEREDARAN DARAH MANUSIA
+                    </h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Kenali anatomi jantung, dinamika pembuluh darah, komponen sel darah, gangguan peredaran darah, serta terapkan kebiasaan hidup sehat untuk menjaga organ jantungmu.
+                    </p>
+                    <div class="pt-4 flex flex-wrap gap-3">
+                        <button onclick="openStudentModal()" class="px-6 py-3 rounded-xl bg-bloodRed hover:bg-rose-600 text-white font-bold shadow-lg shadow-bloodRed/40 transition flex items-center space-x-2">
+                            <span>🚀 Mulai Belajar & Identitas</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button onclick="navigateTo('simulasi')" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold backdrop-blur border border-white/20 transition flex items-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Simulasi Langsung</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Identity Status & Learning Progress Card -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Data Siswa Card -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-id-card text-bloodRed mr-2"></i> Identitas Siswa
+                            </h3>
+                            <button onclick="openStudentModal()" class="text-xs text-bloodRed hover:underline font-semibold">Ubah Data</button>
+                        </div>
+                        <div class="space-y-2 text-sm text-slate-600">
+                            <p><span class="font-medium text-slate-400">Nama:</span> <span id="card-student-name" class="font-bold text-slate-800">Belum Diisi</span></p>
+                            <p><span class="font-medium text-slate-400">Kelas:</span> <span id="card-student-class" class="font-bold text-slate-800">-</span></p>
+                            <p><span class="font-medium text-slate-400">No. Absen:</span> <span id="card-student-absen" class="font-bold text-slate-800">-</span></p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                        <span>Status Google Sheets:</span>
+                        <span id="sheet-sync-status" class="font-semibold text-amber-600"><i class="fa-solid fa-database mr-1"></i> Lokal (Offline)</span>
+                    </div>
+                </div>
+
+                <!-- Learning Progress Tracker -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-chart-pie text-emerald-600 mr-2"></i> Progress Belajar
+                            </h3>
+                            <span id="overall-progress-text" class="text-sm font-black text-emerald-600">0%</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">Selesaikan seluruh modul, kuis, dan aktivitas laboratorium.</p>
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div id="overall-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
+                        <div class="bg-slate-50 p-2 rounded-lg">
+                            <span class="block text-slate-400 font-medium">Pre-Test</span>
+                            <span id="stat-pretest-score" class="font-bold text-slate-700">-</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-lg">
+                            <span class="block text-slate-400 font-medium">Post-Test</span>
+                            <span id="stat-posttest-score" class="font-bold text-slate-700">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gamification Summary Badge -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-trophy text-amber-500 mr-2"></i> Lencana & Poin
+                            </h3>
+                            <span id="user-total-xp" class="text-xs font-bold bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">0 XP</span>
+                        </div>
+                        <div id="badges-container" class="flex flex-wrap gap-2 py-1">
+                            <!-- Badges rendered dynamically -->
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-medium">Level Pembelajar:</span>
+                        <span id="user-level-name" class="text-xs font-bold text-indigo-600">Level 1 - Novis Pembuluh</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Navigation Cards Grid -->
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-compass text-bloodRed mr-2"></i> Menu Eksplorasi Utama
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div onclick="navigateTo('jantung')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-bloodRed hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-rose-100 text-bloodRed flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Jelajah Jantung</h4>
+                        <p class="text-xs text-slate-500">Anatomi 4 ruang jantung, katup, pembuluh utama & simulasi detak sistol/diastol.</p>
+                    </div>
+
+                    <div onclick="navigateTo('darah')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-droplet"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Komponen Darah</h4>
+                        <p class="text-xs text-slate-500">Eksplorasi Plasma, Eritrosit, Leukosit, dan Trombosit beserta fungsinya.</p>
+                    </div>
+
+                    <div onclick="navigateTo('pembuluh')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-diagram-project"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Pembuluh Darah</h4>
+                        <p class="text-xs text-slate-500">Perbandingan struktur & fungsi antara Arteri, Vena, dan Kapiler.</p>
+                    </div>
+
+                    <div onclick="navigateTo('simulasi')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-purple-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-arrows-spin"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Simulasi Aliran</h4>
+                        <p class="text-xs text-slate-500">Animasi peredaran darah kecil (pulmonal), besar (sistemik), dan ganda.</p>
+                    </div>
+
+                    <div onclick="navigateTo('gangguan')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Gangguan & Kelainan</h4>
+                        <p class="text-xs text-slate-500">Edukasi Anemia, Hipertensi, PJK, Stroke, Varises, hingga Talasemia.</p>
+                    </div>
+
+                    <div onclick="navigateTo('hidup-sehat')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-apple-whole"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Hidup Sehat</h4>
+                        <p class="text-xs text-slate-500">Kebiasaan positif dan tantangan mini-game "Selamatkan Jantungmu".</p>
+                    </div>
+
+                    <div onclick="navigateTo('aktivitas')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Aktivitas & Lab</h4>
+                        <p class="text-xs text-slate-500">5 Misi interaktif: susun alur, kenali organ, detektif gangguan, dll.</p>
+                    </div>
+
+                    <div onclick="navigateTo('posttest')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-teal-400 hover:shadow-md transition cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base mb-1">Evaluasi Belajar</h4>
+                        <p class="text-xs text-slate-500">Uji pemahamanmu lewat Pre-Test, Post-Test, dan lihat perkembanganmu.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 2: JELAJAH JANTUNG ==================== -->
+        <section id="page-jantung" class="page-section hidden space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-heart text-bloodRed mr-2.5"></i> Laboratorium Anatomi Jantung
+                    </h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">Klik bagian organ jantung di bawah untuk mempelajari fungsi, ciri, dan aliran darahnya.</p>
+                </div>
+                <button onclick="toggleHeartBeat()" id="btn-toggle-beat" class="px-4 py-2 bg-bloodRed hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-2">
+                    <i class="fa-solid fa-wave-square"></i>
+                    <span id="heart-beat-text">Nyalakan Detak Jantung</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- SVG Interactive Heart Diagram -->
+                <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center relative">
+                    <div class="absolute top-4 left-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Klik Bagian Jantung
+                    </div>
+
+                    <div id="svg-heart-wrapper" class="w-full max-w-md py-4">
+                        <svg id="interactive-heart-svg" viewBox="0 0 500 500" class="w-full h-auto drop-shadow-md">
+                            <!-- Background Heart Contour -->
+                            <g id="heart-graphic">
+                                <!-- Septum / Dinding Tengah -->
+                                <path id="part-septum" class="heart-part" fill="#a8a29e" stroke="#78716c" stroke-width="3" d="M 235,160 L 265,160 L 260,420 L 240,420 Z" onclick="selectHeartPart('septum')" />
+
+                                <!-- Serambi Kanan (Right Atrium) -->
+                                <path id="part-serambi-kanan" class="heart-part" fill="#60a5fa" stroke="#2563eb" stroke-width="3" d="M 120,180 C 120,130 180,120 220,170 L 220,250 L 130,250 Z" onclick="selectHeartPart('serambi-kanan')" />
+
+                                <!-- Bilik Kanan (Right Ventricle) -->
+                                <path id="part-bilik-kanan" class="heart-part" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3" d="M 130,260 L 230,260 L 230,400 C 180,390 140,340 130,260 Z" onclick="selectHeartPart('bilik-kanan')" />
+
+                                <!-- Serambi Kiri (Left Atrium) -->
+                                <path id="part-serambi-kiri" class="heart-part" fill="#f87171" stroke="#dc2626" stroke-width="3" d="M 280,170 C 320,120 380,130 380,180 L 370,250 L 280,250 Z" onclick="selectHeartPart('serambi-kiri')" />
+
+                                <!-- Bilik Kiri (Left Ventricle) -->
+                                <path id="part-bilik-kiri" class="heart-part" fill="#ef4444" stroke="#b91c1c" stroke-width="3" d="M 270,260 L 370,260 C 360,340 320,390 270,410 Z" onclick="selectHeartPart('bilik-kiri')" />
+
+                                <!-- Katup Jantung (Valves) -->
+                                <circle id="part-katup" class="heart-part" cx="175" cy="255" r="14" fill="#fde047" stroke="#ca8a04" stroke-width="2" onclick="selectHeartPart('katup')" />
+                                <circle class="heart-part" cx="325" cy="255" r="14" fill="#fde047" stroke="#ca8a04" stroke-width="2" onclick="selectHeartPart('katup')" />
+
+                                <!-- Aorta & Major Blood Vessels -->
+                                <path id="part-aorta" class="heart-part" fill="#dc2626" stroke="#991b1b" stroke-width="3" d="M 230,140 Q 250,60 300,70 Q 330,80 320,120 L 280,130 Q 280,95 260,90 Q 245,85 240,140 Z" onclick="selectHeartPart('aorta')" />
+                                <path id="part-vena-cava" class="heart-part" fill="#2563eb" stroke="#1e40af" stroke-width="3" d="M 140,70 L 175,70 L 175,150 L 140,150 Z" onclick="selectHeartPart('vena-cava')" />
+                            </g>
+
+                            <!-- Labels on SVG -->
+                            <text x="145" y="190" font-size="11" font-weight="bold" fill="white" pointer-events="none">Serambi Kanan</text>
+                            <text x="300" y="190" font-size="11" font-weight="bold" fill="white" pointer-events="none">Serambi Kiri</text>
+                            <text x="150" y="320" font-size="11" font-weight="bold" fill="white" pointer-events="none">Bilik Kanan</text>
+                            <text x="295" y="320" font-size="11" font-weight="bold" fill="white" pointer-events="none">Bilik Kiri</text>
+                            <text x="265" y="75" font-size="11" font-weight="bold" fill="white" pointer-events="none">Aorta</text>
+                            <text x="125" y="100" font-size="10" font-weight="bold" fill="white" pointer-events="none">Vena Cava</text>
+                        </svg>
+                    </div>
+
+                    <!-- Color Legend -->
+                    <div class="flex items-center space-x-6 text-xs text-slate-600 mt-2">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                            <span>Darah Miskin $O_2$ (Kaya $CO_2$)</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                            <span>Darah Kaya $O_2$</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Panel Side -->
+                <div class="lg:col-span-6 space-y-4">
+                    <div id="heart-info-card" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-bloodLight text-bloodRed rounded-full">Detail Anatomi</span>
+                            <span id="heart-part-type" class="text-xs text-slate-400 font-medium">Klik pada diagram di samping</span>
+                        </div>
+                        <h3 id="heart-part-title" class="text-xl font-bold text-slate-800">Organ Jantung (Cor)</h3>
+                        <p id="heart-part-desc" class="text-sm text-slate-600 leading-relaxed">
+                            Jantung adalah organ berotot sebesar kepalan tangan yang terletak di dalam rongga dada agak ke kiri. Jantung berfungsi memompa darah ke seluruh tubuh tanpa henti.
+                        </p>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Fungsi Utama & Aliran Darah</h4>
+                            <p id="heart-part-flow" class="text-xs text-slate-600">Jantung memiliki 4 ruang utama yang dipisahkan oleh sekat (septum) dan katup untuk mencegah darah bercampur.</p>
+                        </div>
+
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start space-x-3">
+                            <i class="fa-solid fa-lightbulb text-amber-500 text-lg mt-0.5"></i>
+                            <div>
+                                <h4 class="text-xs font-bold text-amber-900">Fakta Unik Jantung</h4>
+                                <p id="heart-part-fact" class="text-xs text-amber-800 mt-0.5">Dalam satu hari, jantung manusia berdetak sekitar 100.000 kali dan memompa sekitar 7.500 liter darah!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulation Explanation Box (Sistol & Diastol) -->
+                    <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-sm space-y-3">
+                        <h4 class="font-bold text-sm text-rose-400 flex items-center">
+                            <i class="fa-solid fa-heart-pulse mr-2"></i> Konsep Sistol dan Diastol
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                                <span class="font-bold text-rose-300 block mb-1">1. Sistol (Kontraksi)</span>
+                                <p class="text-slate-300">Bilik jantung berkontraksi memompa darah keluar dari jantung menuju paru-paru dan seluruh tubuh.</p>
+                            </div>
+                            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                                <span class="font-bold text-blue-300 block mb-1">2. Diastol (Relaksasi)</span>
+                                <p class="text-slate-300">Otot jantung berelaksasi, serambi mengembang dan menerima darah masukan dari vena.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 3: JELAJAH DARAH ==================== -->
+        <section id="page-darah" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-droplet text-rose-600 mr-2.5"></i> Komponen Penyusun Darah
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Darah terdiri dari jaringan cair (plasma) dan sel-sel darah. Klik setiap kartu komponen untuk mempelajari perannya.</p>
+            </div>
+
+            <!-- Interactive Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Plasma Darah -->
+                <div onclick="showBloodDetail('plasma')" class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-lg transition cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4">
+                            <i class="fa-solid fa-flask text-amber-500"></i>
+                        </div>
+                        <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">55% Komposisi Darah</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-2">Plasma Darah</h3>
+                        <p class="text-xs text-slate-500 mt-1">Cairan kekuningan yang sebagian besar terdiri dari air (90%), sari makanan, hormon, dan antibodi.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-amber-600 flex items-center justify-between">
+                        <span>Pelajari Lebih Lanjut</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Sel Darah Merah (Eritrosit) -->
+                <div onclick="showBloodDetail('eritrosit')" class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-lg transition cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-rose-100 text-bloodRed flex items-center justify-center text-2xl mb-4 animate-pulse">
+                            <i class="fa-solid fa-[#dc2626] fa-circle-dot"></i>
+                        </div>
+                        <span class="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">Eritrosit</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-2">Sel Darah Merah</h3>
+                        <p class="text-xs text-slate-500 mt-1">Berbentuk bikonkaf tanpa inti sel. Mengandung hemoglobin ($Hb$) untuk mengikat $O_2$.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-rose-600 flex items-center justify-between">
+                        <span>Pelajari Lebih Lanjut</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Sel Darah Putih (Leukosit) -->
+                <div onclick="showBloodDetail('leukosit')" class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mb-4">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Leukosit</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-2">Sel Darah Putih</h3>
+                        <p class="text-xs text-slate-500 mt-1">Memiliki inti sel, bentuk tidak tetap (amuboid). Berfungsi melawan kuman dan infeksi penyakit.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-indigo-600 flex items-center justify-between">
+                        <span>Pelajari Lebih Lanjut</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Keping Darah (Trombosit) -->
+                <div onclick="showBloodDetail('trombosit')" class="bg-white p-6 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-4">
+                            <i class="fa-solid fa-bandage"></i>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Trombosit</span>
+                        <h3 class="text-lg font-bold text-slate-800 mt-2">Keping Darah</h3>
+                        <p class="text-xs text-slate-500 mt-1">Fragmentasi sel tanpa inti. Berperan penting dalam proses pembekuan darah saat luka.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-emerald-600 flex items-center justify-between">
+                        <span>Pelajari Lebih Lanjut</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Detail Display Box -->
+            <div id="blood-detail-box" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div id="blood-detail-icon" class="w-10 h-10 rounded-xl bg-bloodLight text-bloodRed flex items-center justify-center text-lg font-bold">
+                        🩸
+                    </div>
+                    <div>
+                        <h3 id="blood-detail-title" class="text-xl font-bold text-slate-800">Pilih Komponen Darah di Atas</h3>
+                        <p id="blood-detail-subtitle" class="text-xs text-slate-500">Klik salah satu komponen untuk melihat struktur mikroskopis dan perannya secara detail.</p>
+                    </div>
+                </div>
+                <div id="blood-detail-content" class="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    Setiap komponen darah bekerja secara harmonis. Plasma membawa nutrisi, eritrosit mengangkut oksigen, leukosit menjaga kekebalan tubuh, dan trombosit menutup luka.
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 4: PEMBULUH DARAH ==================== -->
+        <section id="page-pembuluh" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-diagram-project text-blue-600 mr-2.5"></i> Pembuluh Darah (Arteri vs Vena vs Kapiler)
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Pembuluh darah adalah saluran tempat mengalirnya darah dari jantung ke seluruh tubuh dan sebaliknya.</p>
+            </div>
+
+            <!-- Interactive Comparison Table / Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Arteri / Pembuluh Nadi -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-rose-200 hover:shadow-md transition space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-bloodRed">Arteri (Pembuluh Nadi)</span>
+                        <i class="fa-solid fa-arrow-trend-up text-bloodRed"></i>
+                    </div>
+                    <p class="text-xs text-slate-600">Pembuluh yang membawa darah **keluar dari jantung** menuju ke seluruh tubuh atau paru-paru.</p>
+                    <ul class="text-xs text-slate-600 space-y-2 border-t border-slate-100 pt-3">
+                        <li class="flex items-start"><i class="fa-solid fa-check text-rose-500 mr-2 mt-0.5"></i> <span><strong>Dinding:</strong> Tebal, kuat, dan elastis.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-rose-500 mr-2 mt-0.5"></i> <span><strong>Aliran Darah:</strong> Meninggalkan jantung.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-rose-500 mr-2 mt-0.5"></i> <span><strong>Denyut:</strong> Terasa seirama detak jantung.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-rose-500 mr-2 mt-0.5"></i> <span><strong>Katup:</strong> Hanya 1 di pangkal jantung (aorta).</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-rose-500 mr-2 mt-0.5"></i> <span><strong>Kandungan:</strong> Kaya $O_2$ (kecuali arteri pulmonalis).</span></li>
+                    </ul>
+                </div>
+
+                <!-- Vena / Pembuluh Balik -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-blue-200 hover:shadow-md transition space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Vena (Pembuluh Balik)</span>
+                        <i class="fa-solid fa-arrow-trend-down text-blue-600"></i>
+                    </div>
+                    <p class="text-xs text-slate-600">Pembuluh yang membawa darah **kembali ke jantung** dari organ tubuh.</p>
+                    <ul class="text-xs text-slate-600 space-y-2 border-t border-slate-100 pt-3">
+                        <li class="flex items-start"><i class="fa-solid fa-check text-blue-500 mr-2 mt-0.5"></i> <span><strong>Dinding:</strong> Tipis dan kurang elastis.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-blue-500 mr-2 mt-0.5"></i> <span><strong>Aliran Darah:</strong> Menuju ke jantung.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-blue-500 mr-2 mt-0.5"></i> <span><strong>Denyut:</strong> Tidak terasa.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-blue-500 mr-2 mt-0.5"></i> <span><strong>Katup:</strong> Banyak di sepanjang pembuluh.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-blue-500 mr-2 mt-0.5"></i> <span><strong>Kandungan:</strong> Kaya $CO_2$ (kecuali vena pulmonalis).</span></li>
+                    </ul>
+                </div>
+
+                <!-- Kapiler -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-purple-200 hover:shadow-md transition space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">Pembuluh Kapiler</span>
+                        <i class="fa-solid fa-network-wired text-purple-600"></i>
+                    </div>
+                    <p class="text-xs text-slate-600">Pembuluh sangat halus yang menghubungkan ujung arteri terkecil dan vena terkecil.</p>
+                    <ul class="text-xs text-slate-600 space-y-2 border-t border-slate-100 pt-3">
+                        <li class="flex items-start"><i class="fa-solid fa-check text-purple-500 mr-2 mt-0.5"></i> <span><strong>Dinding:</strong> Sangat tipis (setebal 1 sel).</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-purple-500 mr-2 mt-0.5"></i> <span><strong>Fungsi:</strong> Tempat pertukaran $O_2, CO_2$, dan nutrisi.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-purple-500 mr-2 mt-0.5"></i> <span><strong>Letak:</strong> Langsung berhubungan dengan sel jaringan tubuh.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 5: SIMULASI PEREDARAN DARAH ==================== -->
+        <section id="page-simulasi" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-arrows-spin text-purple-600 mr-2.5"></i> Simulasi Aliran Peredaran Darah
+                    </h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">Pilih mode sirkulasi dan amankan pemahamanmu mengenai peredaran darah ganda.</p>
+                </div>
+                <!-- Controls -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="setSimMode('kecil')" id="btn-mode-kecil" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200">
+                        Peredaran Darah Kecil
+                    </button>
+                    <button onclick="setSimMode('besar')" id="btn-mode-besar" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200">
+                        Peredaran Darah Besar
+                    </button>
+                    <button onclick="setSimMode('lengkap')" id="btn-mode-lengkap" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200">
+                        Siklus Lengkap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="bg-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-col items-center justify-center relative min-h-[420px]">
+                <canvas id="blood-sim-canvas" width="700" height="380" class="w-full max-w-2xl h-auto bg-slate-950 rounded-2xl border border-slate-800"></canvas>
+                
+                <!-- Canvas Controls Bar -->
+                <div class="w-full max-w-2xl mt-4 flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleSimulation()" id="btn-play-sim" class="px-4 py-2 bg-bloodRed hover:bg-rose-600 text-white font-bold rounded-xl transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-play"></i>
+                            <span id="play-sim-text">Jalankan Simulasi</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                            <span>Kaya $O_2$</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                            <span>Miskin $O_2$ ($CO_2$)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pathway Explanation Card -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h3 id="sim-path-title" class="font-bold text-slate-800 text-base">Alur Peredaran Darah Kecil (Pulmonal)</h3>
+                <div id="sim-path-desc" class="text-xs sm:text-sm text-slate-600 leading-relaxed font-mono bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    Jantung (Bilik Kanan) ➔ Arteri Pulmonalis ➔ Paru-paru ➔ Vena Pulmonalis ➔ Jantung (Serambi Kiri)
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 6: GANGGUNGAN PEREDARAN DARAH ==================== -->
+        <section id="page-gangguan" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 mr-2.5"></i> Gangguan & Kelainan Peredaran Darah
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Pelajari berbagai penyakit atau kelainan pada sistem peredaran darah manusia secara edukatif.</p>
+            </div>
+
+            <!-- Disclaimer Box -->
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-900 flex items-start space-x-3">
+                <i class="fa-solid fa-shield-cat text-amber-600 text-lg mt-0.5"></i>
+                <p>
+                    <strong>Catatan Edukasi:</strong> Informasi di halaman ini bersifat pembelajaran sains IPA SMP. Materi ini bukan untuk diagnosis medis mandiri atau petunjuk pengobatan individual. Konsultasikan dengan fasilitas kesehatan profesional untuk pemeriksaan kesehatan resmi.
+                </p>
+            </div>
+
+            <!-- Disorders Grid -->
+            <div id="disorders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated via script -->
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 7: HIDUP SEHAT ==================== -->
+        <section id="page-hidup-sehat" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-apple-whole text-emerald-600 mr-2.5"></i> Sehatkan Jantung & Pembuluh Darah
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Gaya hidup dan kebiasaan sehari-hari sangat menentukan kesehatan organ sirkulasi darahmu.</p>
+            </div>
+
+            <!-- Habits List Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center text-emerald-700">
+                        <i class="fa-solid fa-circle-check text-emerald-500 mr-2"></i> Kebiasaan Positif Yang Disarankan
+                    </h3>
+                    <ul class="text-xs text-slate-600 space-y-2.5">
+                        <li class="flex items-start"><i class="fa-solid fa-check text-emerald-500 mr-2 mt-0.5"></i> <span><strong>Olahraga Teratur:</strong> Minimal 30 menit sehari untuk memperkuat otot jantung.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-emerald-500 mr-2 mt-0.5"></i> <span><strong>Makan Buah & Sayur:</strong> Serat dan antioksidan menjaga elastisitas pembuluh darah.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-emerald-500 mr-2 mt-0.5"></i> <span><strong>Minum Air Putih Cukup:</strong> Menjaga kekentalan plasma darah tetap normal.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-check text-emerald-500 mr-2 mt-0.5"></i> <span><strong>Istirahat Cukup:</strong> Tidur 7-8 jam per hari untuk menurunkan beban kerja jantung.</span></li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center text-rose-700">
+                        <i class="fa-solid fa-circle-xmark text-rose-500 mr-2"></i> Kebiasaan Buruk Yang Harus Dihindari
+                    </h3>
+                    <ul class="text-xs text-slate-600 space-y-2.5">
+                        <li class="flex items-start"><i class="fa-solid fa-xmark text-rose-500 mr-2 mt-0.5"></i> <span><strong>Merokok & Terpapar Asap Rokok:</strong> Nikotin dan CO merusak dinding arteri.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-xmark text-rose-500 mr-2 mt-0.5"></i> <span><strong>Makanan Tinggi Garam & Lemak Jenuh:</strong> Pemicu hipertensi dan plak kolesterol.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-xmark text-rose-500 mr-2 mt-0.5"></i> <span><strong>Gaya Hidup Sedentari (Jarang Bergerak):</strong> Duduk berjam-jam tanpa aktivitas.</span></li>
+                        <li class="flex items-start"><i class="fa-solid fa-xmark text-rose-500 mr-2 mt-0.5"></i> <span><strong>Stres Berlebihan:</strong> Memicu hormon kortisol yang meningkatkan tekanan darah.</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Mini Game Section Launcher -->
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-8 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="space-y-2">
+                    <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold backdrop-blur">Tantangan Mini-Game</span>
+                    <h3 class="text-2xl font-black">Mini Game: "Selamatkan Jantungmu!"</h3>
+                    <p class="text-xs text-emerald-100 max-w-xl">Pilihlah kebiasaan yang benar untuk menjaga organ jantung karakter tetap sehat dan dapatkan poin XP tinggi!</p>
+                </div>
+                <button onclick="startMiniGame()" class="px-6 py-3 bg-white text-emerald-800 font-bold rounded-2xl shadow hover:bg-emerald-50 transition whitespace-nowrap">
+                    <i class="fa-solid fa-gamepad mr-2"></i> Mainkan Mini Game
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 8: AKTIVITAS INTERAKTIF & LAB ==================== -->
+        <section id="page-aktivitas" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-gamepad text-indigo-600 mr-2.5"></i> Laboratorium & Aktivitas Interaktif
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Selesaikan 5 Misi Aktivitas untuk menguji pemahaman konsepmu secara hands-on.</p>
+            </div>
+
+            <!-- Activity Selection Tabs -->
+            <div class="flex space-x-2 overflow-x-auto pb-2 border-b border-slate-200 text-xs font-semibold">
+                <button onclick="switchActivityTab(1)" id="act-tab-1" class="px-4 py-2 rounded-xl bg-indigo-600 text-white shadow-sm whitespace-nowrap">Misi 1: Urutkan Alur</button>
+                <button onclick="switchActivityTab(2)" id="act-tab-2" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">Misi 2: Bagian Jantung</button>
+                <button onclick="switchActivityTab(3)" id="act-tab-3" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">Misi 3: Cocokkan Pembuluh</button>
+                <button onclick="switchActivityTab(4)" id="act-tab-4" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">Misi 4: Detektif Gangguan</button>
+                <button onclick="switchActivityTab(5)" id="act-tab-5" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">Misi 5: Pilih Gaya Hidup</button>
+            </div>
+
+            <!-- Activity Content Container -->
+            <div id="activity-content-box" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <!-- Content loaded dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 9: PRE-TEST ==================== -->
+        <section id="page-pretest" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-orange-600 mr-2.5"></i> Pre-Test Peredaran Darah
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Uji kemampuan awal sebelum mempelajari materi secara mendalam. Terdiri dari 10 soal Pilihan Ganda.</p>
+            </div>
+
+            <div id="pretest-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <!-- Pretest generated via JS -->
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 10: POST-TEST ==================== -->
+        <section id="page-posttest" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600 mr-2.5"></i> Post-Test Evaluasi Akhir
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Uji pencapaian akhir pembelajaranmu. Hasil akan dibandingkan dengan Pre-Test.</p>
+            </div>
+
+            <div id="posttest-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <!-- Posttest generated via JS -->
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 11: HASIL BELAJAR & LENCANA ==================== -->
+        <section id="page-hasil" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-award text-amber-500 mr-2.5"></i> Rekapitulasi Hasil Belajar
+                    </h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">Lihat pencapaian nilai pre-test, post-test, perkembangan poin, dan unduh/cetak sertifikat.</p>
+                </div>
+                <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center space-x-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Cetak Hasil Belajar</span>
+                </button>
+            </div>
+
+            <!-- Printable Certificate / Report Area -->
+            <div id="printable-report" class="bg-white p-8 rounded-3xl border-2 border-slate-200 shadow-md space-y-6">
+                <div class="flex items-center justify-between border-b-2 border-slate-800 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-black text-slate-900">LEMBAR HASIL BELAJAR SISWA</h1>
+                        <p class="text-xs text-slate-600 font-semibold">Media Pembelajaran Interaktif IPA Kelas 8: Jelajah Sistem Peredaran Darah</p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p id="print-date" class="font-bold">Tanggal: -</p>
+                        <p id="print-school">SMP Negeri 1 Indonesia</p>
+                    </div>
+                </div>
+
+                <!-- Student Profile Grid -->
+                <div class="grid grid-cols-3 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div>
+                        <span class="block text-slate-400 font-medium">Nama Siswa</span>
+                        <span id="print-name" class="text-sm font-bold text-slate-800">-</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-400 font-medium">Kelas / Absen</span>
+                        <span id="print-class" class="text-sm font-bold text-slate-800">-</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-400 font-medium">Level Pembelajar</span>
+                        <span id="print-level" class="text-sm font-bold text-indigo-600">-</span>
+                    </div>
+                </div>
+
+                <!-- Score Metrics -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-orange-50 border border-orange-200 p-4 rounded-2xl">
+                        <span class="text-xs font-bold text-orange-700 uppercase">Nilai Pre-Test</span>
+                        <h3 id="print-pretest-score" class="text-3xl font-black text-orange-800 mt-1">0</h3>
+                    </div>
+
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
+                        <span class="text-xs font-bold text-emerald-700 uppercase">Nilai Post-Test</span>
+                        <h3 id="print-posttest-score" class="text-3xl font-black text-emerald-800 mt-1">0</h3>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl">
+                        <span class="text-xs font-bold text-blue-700 uppercase">Perkembangan ($N$-Gain)</span>
+                        <h3 id="print-delta-score" class="text-3xl font-black text-blue-800 mt-1">+0</h3>
+                    </div>
+                </div>
+
+                <!-- Reflection Form Section -->
+                <div class="space-y-3 pt-4 border-t border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                        <i class="fa-solid fa-comment-dots text-indigo-600 mr-2"></i> Refleksi Diri Siswa
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">1. Hal baru apa yang paling menarik kamu pelajari hari ini?</label>
+                            <textarea id="refl-1" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Tuliskan pendapatmu..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">2. Kebiasaan hidup sehat apa yang akan segera kamu terapkan di rumah?</label>
+                            <textarea id="refl-2" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Tuliskan pendapatmu..."></textarea>
+                        </div>
+                    </div>
+                    <button onclick="saveReflection()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
+                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Simpan Refleksi & Kirim Data
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 12: DASHBOARD GURU ==================== -->
+        <section id="page-dashboard" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-chart-line text-slate-700 mr-2.5"></i> Dashboard Rekapitulasi Guru
+                    </h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">Pantau aktivitas, rerata nilai kelas, dan data penyelesaian siswa secara real-time.</p>
+                </div>
+                <button onclick="syncTeacherDashboard()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Tarik Data Terbaru dari Spreadsheet</span>
+                </button>
+            </div>
+
+            <!-- Stats Overview Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-400">Total Siswa Terdaftar</span>
+                    <h3 id="dash-total-students" class="text-2xl font-black text-slate-800 mt-1">1</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-400">Rerata Nilai Pre-Test</span>
+                    <h3 id="dash-avg-pretest" class="text-2xl font-black text-orange-600 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-400">Rerata Nilai Post-Test</span>
+                    <h3 id="dash-avg-posttest" class="text-2xl font-black text-emerald-600 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-400">Rerata Peningkatan Poin</span>
+                    <h3 id="dash-avg-gain" class="text-2xl font-black text-blue-600 mt-1">+0</h3>
+                </div>
+            </div>
+
+            <!-- Table of Student Scores -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-700">
+                    Daftar Hasil Belajar Siswa
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3">Nama Siswa</th>
+                                <th class="p-3">Kelas</th>
+                                <th class="p-3">Absen</th>
+                                <th class="p-3">Pre-Test</th>
+                                <th class="p-3">Post-Test</th>
+                                <th class="p-3">Peningkatan</th>
+                                <th class="p-3">Status Sync</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-student-table-body" class="divide-y divide-slate-100">
+                            <!-- Table rows populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 13: PETUNJUK & PANDUAN GURU ==================== -->
+        <section id="page-petunjuk" class="page-section hidden space-y-6">
+            <div class="border-b border-slate-200 pb-4">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-circle-question text-teal-600 mr-2.5"></i> Panduan Guru & Integrasi Backend
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">Langkah mudah mengkonfigurasi Google Sheets & Google Apps Script tanpa coding rumit.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 text-xs text-slate-600 leading-relaxed">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">1. Konfigurasi Spreadsheet & Web App URL</h3>
+                    <p>Buka kode file <code class="bg-slate-100 px-1.5 py-0.5 rounded text-rose-600 font-bold">index.html</code> ini, lalu di bagian paling atas cari variabel <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono">CONFIG</code>:</p>
+                    <pre class="bg-slate-900 text-emerald-400 p-4 rounded-xl mt-2 font-mono overflow-x-auto">
+const CONFIG = {
+    GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/.../exec", // EDIT DI SINI
+    GOOGLE_DOCS_URL: "https://docs.google.com/document/d/...", // EDIT DI SINI
+    SCHOOL_NAME: "SMP Negeri 1 Indonesia", // EDIT DI SINI
+    TEACHER_NAME: "Guru IPA, S.Pd.", // EDIT DI SINI
+    CLASS_NAME: "Kelas VIII" // EDIT DI SINI
+};
+                    </pre>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">2. Kode Backend Google Apps Script (Code.gs)</h3>
+                    <p class="mb-2">Salin kode berikut ke Google Apps Script di Google Sheets Anda:</p>
+                    <textarea readonly class="w-full h-48 p-3 font-mono bg-slate-900 text-slate-200 rounded-xl text-xs focus:outline-none">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var data = JSON.parse(e.postData.contents);
+  var sheetName = data.action || "DATA_SISWA";
+  var targetSheet = sheet.getSheetByName(sheetName);
+  if(!targetSheet) {
+    targetSheet = sheet.insertSheet(sheetName);
+  }
+  
+  if(sheetName === "PRETEST" || sheetName === "POSTTEST") {
+    targetSheet.appendRow([new Date(), data.nama, data.kelas, data.absen, data.nilai, data.benar, data.salah, data.persentase]);
+  } else if(sheetName === "REFLEKSI") {
+    targetSheet.appendRow([new Date(), data.nama, data.kelas, data.refleksi1, data.refleksi2]);
+  } else {
+    targetSheet.appendRow([new Date(), data.nama, data.kelas, data.absen, data.xp]);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet() {
+  return ContentService.createTextOutput("API Jelajah Peredaran Darah Aktif!");
+}
+                    </textarea>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-1">
+            <p class="font-semibold text-slate-700">JELAJAH SISTEM PEREDARAN DARAH MANUSIA • Media Pembelajaran Interaktif IPA Kelas 8 SMP</p>
+            <p>Dirancang sesuai Kurikulum Merdeka • Berbasis Web & PWA Compatible</p>
+        </div>
+    </footer>
+
+    <!-- MODAL IDENTITAS SISWA -->
+    <div id="modal-student" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center">
+                    <i class="fa-solid fa-user-graduate text-bloodRed mr-2"></i> Masukkan Data Siswa
+                </h3>
+                <button onclick="closeStudentModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="form-student-data" onsubmit="saveStudentData(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
+                    <input type="text" id="input-nama" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloodRed outline-none" placeholder="Contoh: Budi Santoso">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Kelas</label>
+                        <input type="text" id="input-kelas" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloodRed outline-none" placeholder="Contoh: 8A">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nomor Absen</label>
+                        <input type="number" id="input-absen" required class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloodRed outline-none" placeholder="15">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3 bg-bloodRed hover:bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-bloodRed/30 transition">
+                        Simpan Identitas & Mulai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        /* ==================== APPLICATION STATE & DATA ==================== */
+        let state = {
+            student: JSON.parse(localStorage.getItem('student_data')) || { name: '', class: '', absen: '', xp: 0, level: 1 },
+            badges: JSON.parse(localStorage.getItem('student_badges')) || [],
+            progress: JSON.parse(localStorage.getItem('student_progress')) || {
+                jantung: false, darah: false, pembuluh: false, simulasi: false, gangguan: false, hidupSehat: false, act1: false, act2: false, act3: false, act4: false, act5: false
+            },
+            pretestScore: localStorage.getItem('pretest_score') || null,
+            posttestScore: localStorage.getItem('posttest_score') || null,
+            isHeartBeating: false,
+            simMode: 'kecil',
+            isSimulating: false
+        };
+
+        /* Data Disorders */
+        const DISORDERS = [
+            { name: 'Anemia', desc: 'Kekurangan hemoglobin atau sel darah merah sehingga tubuh kekurangan pasokan oksigen.', cause: 'Kekurangan zat besi, asam folat, atau pendarahan.', symptoms: 'Lelah, letih, lesu, pucat, pusing.' },
+            { name: 'Hipertensi', desc: 'Tekanan darah tinggi di mana nilai sistol/diastol melebihi batas normal (≥ 140/90 mmHg).', cause: 'Konsumsi garam tinggi, stres, merokok, faktor genetik.', symptoms: 'Sering tanpa gejala, kadang sakit kepala berat.' },
+            { name: 'Hipotensi', desc: 'Tekanan darah di bawah normal (≤ 90/60 mmHg).', cause: 'Didehidrasi, pendarahan, efek obat tertentu.', symptoms: 'Pusing saat berdiri mendadak, lemas, pingsan.' },
+            { name: 'Penyakit Jantung Koroner (PJK)', desc: 'Penyumbatan pembuluh arteri koroner penyokong jantung oleh plak kolesterol.', cause: 'Pola makan tinggi lemak jenuh, merokok, kurang olahraga.', symptoms: 'Nyeri dada sebelah kiri tembus ke punggung.' },
+            { name: 'Stroke', desc: 'Kerusakan jaringan otak akibat tersumbat atau pecahnya pembuluh darah di otak.', cause: 'Hipertensi tidak terkontrol, aterosklerosis.', symptoms: 'Kelumpuhan separuh anggota tubuh, bicara celat.' },
+            { name: 'Varises', desc: 'Pelebaran pembuluh vena yang umumnya terjadi pada bagian kaki.', cause: 'Katup vena melemah akibat berdiri terlalu lama.', symptoms: 'Pembuluh vena membiru dan menonjol di permukaan kulit.' },
+            { name: 'Leukemia', desc: 'Kanker jaringan pembentuk darah di mana sel darah putih membelah tak terkendali.', cause: 'Mutasi genetik sel darah.', symptoms: 'Pucat, mudah infeksi, demam berkepanjangan.' },
+            { name: 'Hemofilia', desc: 'Kelainan genetik di mana darah sulit membeku saat terjadi pendarahan.', cause: 'Faktor keturunan mutasi kromosom X.', symptoms: 'Pendarahan lama berhenti saat terluka.' },
+            { name: 'Talasemia', desc: 'Kelainan genetik bentuk eritrosit yang tidak normal sehingga cepat rusak.', cause: 'Faktor keturunan genetik.', symptoms: 'Cepat lelah, anemia kronis sejak kecil.' }
+        ];
+
+        /* Pretest & Posttest Questions (10 items) */
+        const QUIZ_QUESTIONS = [
+            { q: "Organ utama manusia yang berfungsi memompa darah ke seluruh tubuh adalah...", a: ["Jantung", "Paru-paru", "Hati", "Ginjal"], correct: 0 },
+            { q: "Bagian jantung yang menerima darah kaya akan CO2 dari seluruh tubuh adalah...", a: ["Serambi Kiri", "Serambi Kanan", "Bilik Kiri", "Bilik Kanan"], correct: 1 },
+            { q: "Pembuluh darah yang membawa darah keluar dari jantung dengan dinding tebal dan elastis disebut...", a: ["Vena", "Kapiler", "Arteri", "Limfa"], correct: 2 },
+            { q: "Komponen darah yang berperan penting dalam proses pembekuan darah saat terjadi luka adalah...", a: ["Eritrosit", "Leukosit", "Plasma Darah", "Trombosit"], correct: 3 },
+            { q: "Urutan aliran peredaran darah kecil (pulmonal) yang benar adalah...", a: ["Jantung (Bilik Kanan) → Paru-paru → Jantung (Serambi Kiri)", "Jantung (Bilik Kiri) → Tubuh → Jantung (Serambi Kanan)", "Paru-paru → Jantung → Tubuh", "Jantung → Hati → Ginjal"], correct: 0 },
+            { q: "Sel darah merah (Eritrosit) memiliki warna merah karena mengandung protein khusus yaitu...", a: ["Fibrinogen", "Hemoglobin", "Antibodi", "Albumin"], correct: 1 },
+            { q: "Kondisi tekanan darah seseorang yang berada di atas normal dinamakan...", a: ["Anemia", "Hipotensi", "Hipertensi", "Leukemia"], correct: 2 },
+            { q: "Pertukaran gas oksigen dan karbon dioksida secara langsung terjadi pada pembuluh...", a: ["Arteri Aorta", "Vena Cava", "Kapiler", "Arteri Pulmonalis"], correct: 2 },
+            { q: "Berikut ini yang merupakan upaya menjaga kesehatan sistem peredaran darah adalah...", a: ["Mengkonsumsi makanan sangat asin", "Olahraga teratur dan hindari merokok", "Tidur larut malam setiap hari", "Kurang minum air putih"], correct: 1 },
+            { q: "Mengapa peredaran darah manusia disebut peredaran darah ganda?", a: ["Karena darah mengalir lewat 2 jantung", "Karena darah beredar melewati jantung sebanyak dua kali dalam satu siklus", "Karena memiliki dua jenis sel darah", "Karena pembuluh darah berjumlah dua pasang"], correct: 1 }
+        ];
+
+        /* ==================== INITIALIZATION & NAVIGATION ==================== */
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUserUI();
+            renderBadges();
+            renderDisorders();
+            initQuiz('pretest');
+            initQuiz('posttest');
+            renderActivityTab(1);
+            initCanvasSimulation();
+            syncTeacherDashboard();
+        });
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active-nav', 'bg-white', 'shadow-sm', 'font-bold');
+                if (btn.dataset.page === pageId) {
+                    btn.classList.add('active-nav', 'bg-white', 'shadow-sm', 'font-bold');
+                }
+            });
+
+            // Track module completion progress
+            if (['jantung', 'darah', 'pembuluh', 'simulasi', 'gangguan', 'hidup-sehat'].includes(pageId)) {
+                state.progress[pageId] = true;
+                saveProgress();
+            }
+
+            if (pageId === 'hasil') updateReportView();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        /* ==================== USER DATA & MODAL ==================== */
+        function openStudentModal() {
+            document.getElementById('modal-student').classList.remove('hidden');
+            if (state.student.name) {
+                document.getElementById('input-nama').value = state.student.name;
+                document.getElementById('input-kelas').value = state.student.class;
+                document.getElementById('input-absen').value = state.student.absen;
+            }
+        }
+
+        function closeStudentModal() {
+            document.getElementById('modal-student').classList.add('hidden');
+        }
+
+        function saveStudentData(e) {
+            e.preventDefault();
+            state.student.name = document.getElementById('input-nama').value.trim();
+            state.student.class = document.getElementById('input-kelas').value.trim();
+            state.student.absen = document.getElementById('input-absen').value.trim();
+
+            localStorage.setItem('student_data', JSON.stringify(state.student));
+            updateUserUI();
+            closeStudentModal();
+            sendToGoogleSheets('DATA_SISWA', { nama: state.student.name, kelas: state.student.class, absen: state.student.absen, xp: state.student.xp });
+        }
+
+        function updateUserUI() {
+            const nameDisplay = state.student.name || 'Tamu';
+            document.getElementById('nav-user-name').innerHTML = `<i class="fa-solid fa-user-graduate text-slate-500 mr-1"></i> ${nameDisplay}`;
+            document.getElementById('card-student-name').innerText = nameDisplay;
+            document.getElementById('card-student-class').innerText = state.student.class || '-';
+            document.getElementById('card-student-absen').innerText = state.student.absen || '-';
+
+            // XP and Level calculation
+            const level = Math.floor(state.student.xp / 100) + 1;
+            state.student.level = level;
+            document.getElementById('nav-user-level').innerHTML = `<i class="fa-solid fa-star text-amber-500"></i> Level ${level}`;
+            document.getElementById('nav-user-xp').innerHTML = `<i class="fa-solid fa-bolt text-amber-500"></i> ${state.student.xp} XP`;
+            document.getElementById('user-total-xp').innerText = `${state.student.xp} XP`;
+
+            calculateOverallProgress();
+        }
+
+        function addXP(amount) {
+            state.student.xp += amount;
+            localStorage.setItem('student_data', JSON.stringify(state.student));
+            updateUserUI();
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+            }
+        }
+
+        function calculateOverallProgress() {
+            const totalItems = Object.keys(state.progress).length;
+            const completedItems = Object.values(state.progress).filter(Boolean).length;
+            const percent = Math.round((completedItems / totalItems) * 100);
+
+            document.getElementById('overall-progress-text').innerText = `${percent}%`;
+            document.getElementById('overall-progress-bar').style.width = `${percent}%`;
+        }
+
+        function saveProgress() {
+            localStorage.setItem('student_progress', JSON.stringify(state.progress));
+            calculateOverallProgress();
+        }
+
+        /* ==================== JANTUNG INTERACTIVE ==================== */
+        const HEART_PARTS_INFO = {
+            'serambi-kanan': { title: 'Serambi Kanan (Atrium Dextra)', desc: 'Menerima darah yang kaya akan Karbon Dioksida ($CO_2$) dari seluruh jaringan tubuh melalui pembuluh Vena Cava.', flow: 'Seluruh Tubuh ➔ Vena Cava ➔ Serambi Kanan ➔ Bilik Kanan', fact: 'Dinding serambi relatif lebih tipis dibanding bilik karena hanya menerima darah.' },
+            'bilik-kanan': { title: 'Bilik Kanan (Ventriculus Dexter)', desc: 'Memompa darah yang kaya $CO_2$ keluar dari jantung menuju ke paru-paru melalui Arteri Pulmonalis.', flow: 'Serambi Kanan ➔ Bilik Kanan ➔ Arteri Pulmonalis ➔ Paru-paru', fact: 'Bilik kanan memompa darah ke organ paru-paru yang letaknya dekat dari jantung.' },
+            'serambi-kiri': { title: 'Serambi Kiri (Atrium Sinistra)', desc: 'Menerima darah bersih yang kaya Oksigen ($O_2$) kembali dari paru-paru melalui Vena Pulmonalis.', flow: 'Paru-paru ➔ Vena Pulmonalis ➔ Serambi Kiri ➔ Bilik Kiri', fact: 'Darah dari paru-paru berwarna merah terang karena mengikat oksigen segar.' },
+            'bilik-kiri': { title: 'Bilik Kiri (Ventriculus Sinister)', desc: 'Memompa darah kaya $O_2$ bertekanan tinggi menuju seluruh jaringan tubuh melalui Aorta.', flow: 'Serambi Kiri ➔ Bilik Kiri ➔ Aorta ➔ Seluruh Tubuh', fact: 'Bilik kiri memiliki dinding otot paling tebal karena harus memompa darah ke seluruh tubuh!' },
+            'katup': { title: 'Katup Jantung (Valvula)', desc: 'Pintu satu arah yang menjaga agar aliran darah tidak berbalik arah ke ruang sebelumnya.', flow: 'Menjaga aliran darah tetap bergerak searah.', fact: 'Bunyi detak jantung "LUB-DUB" berasal dari suara katup yang menutup serempak!' },
+            'septum': { title: 'Sekat Jantung (Septum)', desc: 'Dinding pemisah tebal antara bagian kanan dan kiri jantung.', flow: 'Mencegah bercampurnya darah kotor ($CO_2$) dan darah bersih ($O_2$).', fact: 'Kerusakan pada septum dapat menyebabkan penyakit jantung bawaan.' },
+            'aorta': { title: 'Aorta', desc: 'Pembuluh darah arteri terbesar dalam tubuh manusia.', flow: 'Menyalurkan darah kaya $O_2$ dari bilik kiri ke arteri seluruh tubuh.', fact: 'Aorta manusia dewasa memiliki diameter sebesar selang penyiram tanaman!' },
+            'vena-cava': { title: 'Vena Cava', desc: 'Pembuluh balik besar yang mengumpulkan darah kotor dari tubuh bagian atas dan bawah.', flow: 'Seluruh Tubuh ➔ Vena Cava ➔ Serambi Kanan', fact: 'Terdiri dari Vena Cava Superior (tubuh atas) dan Inferior (tubuh bawah).' }
+        };
+
+        function selectHeartPart(partKey) {
+            const data = HEART_PARTS_INFO[partKey];
+            if (!data) return;
+
+            document.getElementById('heart-part-title').innerText = data.title;
+            document.getElementById('heart-part-desc').innerHTML = data.desc;
+            document.getElementById('heart-part-flow').innerText = data.flow;
+            document.getElementById('heart-part-fact').innerText = data.fact;
+            document.getElementById('heart-part-type').innerText = 'Bagian Terpilih';
+        }
+
+        function toggleHeartBeat() {
+            state.isHeartBeating = !state.isHeartBeating;
+            const svg = document.getElementById('interactive-heart-svg');
+            const txt = document.getElementById('heart-beat-text');
+
+            if (state.isHeartBeating) {
+                svg.classList.add('animate-heartbeat-fast');
+                txt.innerText = 'Hentikan Simulasi Detak';
+            } else {
+                svg.classList.remove('animate-heartbeat-fast');
+                txt.innerText = 'Nyalakan Detak Jantung';
+            }
+        }
+
+        /* ==================== DARAH DETAIL ==================== */
+        const BLOOD_DETAILS = {
+            'plasma': { title: 'Plasma Darah', icon: '🧪', content: 'Plasma darah adalah komponen cair berwarna kekuningan. Mengandung 90% air serta protein penting seperti albumin, globulin, dan fibrinogen. Berfungsi mengangkut sari makanan, hormon, dan zat sisa metabolisme.' },
+            'eritrosit': { title: 'Sel Darah Merah (Eritrosit)', icon: '🔴', content: 'Berbentuk cawan bikonkaf tanpa inti sel. Mengandung molekul hemoglobin ($Hb$) yang mengandung zat besi untuk mengikat oksigen dari paru-paru. Jumlah normal: 4-5 juta sel per $mm^3$ darah.' },
+            'leukosit': { title: 'Sel Darah Putih (Leukosit)', icon: '🛡️', content: 'Ukurannya lebih besar dari eritrosit, memiliki inti sel, dan bentuknya dapat berubah-ubah (amuboid). Berfungsi membunuh kuman penyakit melalui pembentukan antibodi atau fagositosis.' },
+            'trombosit': { title: 'Keping Darah (Trombosit)', icon: '🩹', content: 'Ukuran sangat kecil tanpa inti sel. Saat luka terjadi, trombosit akan pecah dan mengeluarkan enzim trombokinase untuk mengubah protrombin menjadi trombin, membekukan darah.' }
+        };
+
+        function showBloodDetail(key) {
+            const data = BLOOD_DETAILS[key];
+            if (!data) return;
+            document.getElementById('blood-detail-icon').innerText = data.icon;
+            document.getElementById('blood-detail-title').innerText = data.title;
+            document.getElementById('blood-detail-content').innerText = data.content;
+        }
+
+        /* ==================== CANVAS SIMULASI ==================== */
+        let simCanvas, simCtx, animationFrameId;
+        let particles = [];
+
+        function initCanvasSimulation() {
+            simCanvas = document.getElementById('blood-sim-canvas');
+            if (!simCanvas) return;
+            simCtx = simCanvas.getContext('2d');
+            resetSimParticles();
+        }
+
+        function resetSimParticles() {
+            particles = [];
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    progress: Math.random(),
+                    speed: 0.005 + Math.random() * 0.003
+                });
+            }
+        }
+
+        function setSimMode(mode) {
+            state.simMode = mode;
+            document.getElementById('btn-mode-kecil').className = mode === 'kecil' ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow' : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700';
+            document.getElementById('btn-mode-besar').className = mode === 'besar' ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow' : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700';
+            document.getElementById('btn-mode-lengkap').className = mode === 'lengkap' ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow' : 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700';
+
+            const title = document.getElementById('sim-path-title');
+            const desc = document.getElementById('sim-path-desc');
+
+            if (mode === 'kecil') {
+                title.innerText = 'Peredaran Darah Kecil (Pulmonal)';
+                desc.innerText = 'Jantung (Bilik Kanan) ➔ Arteri Pulmonalis ➔ Paru-paru ➔ Vena Pulmonalis ➔ Jantung (Serambi Kiri)';
+            } else if (mode === 'besar') {
+                title.innerText = 'Peredaran Darah Besar (Sistemik)';
+                desc.innerText = 'Jantung (Bilik Kiri) ➔ Aorta ➔ Seluruh Tubuh ➔ Vena Cava ➔ Jantung (Serambi Kanan)';
+            } else {
+                title.innerText = 'Siklus Lengkap (Peredaran Darah Ganda)';
+                desc.innerText = 'Peredaran Darah Kecil (Pulmonal) + Peredaran Darah Besar (Sistemik) berputar tanpa henti.';
+            }
+        }
+
+        function toggleSimulation() {
+            state.isSimulating = !state.isSimulating;
+            const btnText = document.getElementById('play-sim-text');
+            if (state.isSimulating) {
+                btnText.innerText = 'Hentikan Simulasi';
+                animateCanvas();
+            } else {
+                btnText.innerText = 'Jalankan Simulasi';
+                cancelAnimationFrame(animationFrameId);
+            }
+        }
+
+        function animateCanvas() {
+            simCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+
+            // Draw Heart Core Diagram in Canvas
+            simCtx.fillStyle = '#1e293b';
+            simCtx.fillRect(280, 140, 140, 100);
+            simCtx.strokeStyle = '#dc2626';
+            simCtx.lineWidth = 3;
+            simCtx.strokeRect(280, 140, 140, 100);
+
+            simCtx.fillStyle = '#ffffff';
+            simCtx.font = 'bold 12px sans-serif';
+            simCtx.fillText('JANTUNG', 320, 195);
+
+            // Draw Circulatory Loops
+            // Upper Loop: Paru-Paru
+            simCtx.beginPath();
+            simCtx.arc(350, 60, 40, 0, Math.PI * 2);
+            simCtx.fillStyle = '#38bdf8';
+            simCtx.fill();
+            simCtx.fillStyle = '#0f172a';
+            simCtx.fillText('PARU-PARU', 315, 65);
+
+            // Lower Loop: Tubuh
+            simCtx.beginPath();
+            simCtx.arc(350, 320, 45, 0, Math.PI * 2);
+            simCtx.fillStyle = '#f43f5e';
+            simCtx.fill();
+            simCtx.fillStyle = '#ffffff';
+            simCtx.fillText('SELURUH TUBUH', 300, 325);
+
+            // Draw Blood Particle Flow
+            particles.forEach(p => {
+                p.progress += p.speed;
+                if (p.progress > 1) p.progress = 0;
+
+                let px, py, isOxygenated = false;
+
+                if (state.simMode === 'kecil' || (state.simMode === 'lengkap' && p.progress < 0.5)) {
+                    // Top loop animation
+                    const angle = p.progress * Math.PI * 2;
+                    px = 350 + Math.cos(angle) * 70;
+                    py = 110 + Math.sin(angle) * 50;
+                    isOxygenated = py > 110;
+                } else {
+                    // Bottom loop animation
+                    const angle = p.progress * Math.PI * 2;
+                    px = 350 + Math.cos(angle) * 90;
+                    py = 250 + Math.sin(angle) * 60;
+                    isOxygenated = py < 250;
+                }
+
+                simCtx.beginPath();
+                simCtx.arc(px, py, 6, 0, Math.PI * 2);
+                simCtx.fillStyle = isOxygenated ? '#ef4444' : '#3b82f6';
+                simCtx.fill();
+            });
+
+            if (state.isSimulating) {
+                animationFrameId = requestAnimationFrame(animateCanvas);
+            }
+        }
+
+        /* ==================== DISORDERS ==================== */
+        function renderDisorders() {
+            const grid = document.getElementById('disorders-grid');
+            grid.innerHTML = DISORDERS.map(d => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition space-y-3">
+                    <span class="px-2.5 py-1 bg-amber-100 text-amber-800 font-bold rounded-full text-xs">${d.name}</span>
+                    <p class="text-xs text-slate-700 font-medium leading-relaxed">${d.desc}</p>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-1">
+                        <p><strong class="text-slate-500">Penyebab:</strong> ${d.cause}</p>
+                        <p><strong class="text-slate-500">Gejala Umum:</strong> ${d.symptoms}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* ==================== ACTIVITIES & MINI GAME ==================== */
+        function switchActivityTab(num) {
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`act-tab-${i}`);
+                if (i === num) {
+                    btn.className = "px-4 py-2 rounded-xl bg-indigo-600 text-white shadow-sm whitespace-nowrap";
+                } else {
+                    btn.className = "px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap";
+                }
+            }
+            renderActivityTab(num);
+        }
+
+        function renderActivityTab(num) {
+            const box = document.getElementById('activity-content-box');
+            if (num === 1) {
+                box.innerHTML = `
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base">Misi 1: Susun Jalur Peredaran Darah Besar</h3>
+                        <p class="text-xs text-slate-500">Klik opsi di bawah sesuai urutan yang tepat dari Bilik Kiri Jantung!</p>
+                        <div id="act1-steps" class="flex flex-wrap gap-2 min-h-[40px] p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <button onclick="addAct1Step('Bilik Kiri')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">Bilik Kiri</button>
+                            <button onclick="addAct1Step('Aorta')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">Aorta</button>
+                            <button onclick="addAct1Step('Seluruh Tubuh')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">Seluruh Tubuh</button>
+                            <button onclick="addAct1Step('Vena Cava')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">Vena Cava</button>
+                            <button onclick="addAct1Step('Serambi Kanan')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">Serambi Kanan</button>
+                        </div>
+                        <button onclick="checkAct1()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">Periksa Urutan</button>
+                    </div>
+                `;
+            } else if (num === 2) {
+                box.innerHTML = `
+                    <div class="space-y-4 text-xs">
+                        <h3 class="font-bold text-slate-800 text-base">Misi 2: Bagian Jantung Pemompa Darah Bersih</h3>
+                        <p class="text-slate-600">Manakah bagian jantung yang bertugas memompa darah kaya oksigen menuju aorta ke seluruh tubuh?</p>
+                        <div class="space-y-2">
+                            <button onclick="answerAct2(false)" class="w-full p-3 text-left bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100">A. Serambi Kanan</button>
+                            <button onclick="answerAct2(true)" class="w-full p-3 text-left bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100">B. Bilik Kiri</button>
+                            <button onclick="answerAct2(false)" class="w-full p-3 text-left bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100">C. Bilik Kanan</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                box.innerHTML = `<div class="text-xs text-slate-500">Misi ini aktif dan siap dijalankan. Latih pemahamanmu!</div>`;
+            }
+        }
+
+        let act1Answer = [];
+        function addAct1Step(step) {
+            act1Answer.push(step);
+            document.getElementById('act1-steps').innerHTML = act1Answer.map(s => `<span class="px-2 py-1 bg-indigo-600 text-white rounded text-xs">${s}</span>`).join(' ➔ ');
+        }
+
+        function checkAct1() {
+            const correct = ["Bilik Kiri", "Aorta", "Seluruh Tubuh", "Vena Cava", "Serambi Kanan"].join(',');
+            if (act1Answer.join(',') === correct) {
+                alert("🎉 Luar biasa! Urutan alur peredaran darah besar kamu 100% Benar (+20 XP)");
+                addXP(20);
+                state.progress.act1 = true;
+                saveProgress();
+            } else {
+                alert("💡 Belum tepat. Coba ingat kembali: Bilik Kiri ➔ Aorta ➔ Seluruh Tubuh ➔ Vena Cava ➔ Serambi Kanan.");
+                act1Answer = [];
+                document.getElementById('act1-steps').innerHTML = '';
+            }
+        }
+
+        function answerAct2(isCorrect) {
+            if (isCorrect) {
+                alert("🎉 Tepat Sekali! Bilik kiri bertugas memompa darah bersih beroksigen ke seluruh tubuh! (+20 XP)");
+                addXP(20);
+                state.progress.act2 = true;
+                saveProgress();
+            } else {
+                alert("💡 Kurang tepat. Bilik kiri adalah pemompa utama darah kaya oksigen ke seluruh tubuh.");
+            }
+        }
+
+        function startMiniGame() {
+            alert("🎮 Mini-Game 'Selamatkan Jantungmu': Pilih gaya hidup sehat dan kumpulkan poin XP sebanyak-banyaknya!");
+            addXP(30);
+            state.progress.hidupSehat = true;
+            saveProgress();
+        }
+
+        /* ==================== QUIZ SYSTEM (PRETEST & POSTTEST) ==================== */
+        function initQuiz(type) {
+            const container = document.getElementById(`${type}-container`);
+            if (!container) return;
+
+            let html = QUIZ_QUESTIONS.map((q, idx) => `
+                <div class="space-y-3 pb-4 border-b border-slate-100 text-xs">
+                    <p class="font-bold text-slate-800">${idx + 1}. ${q.q}</p>
+                    <div class="space-y-1.5">
+                        ${q.a.map((opt, optIdx) => `
+                            <label class="flex items-center space-x-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100">
+                                <input type="radio" name="${type}-q${idx}" value="${optIdx}" class="text-bloodRed focus:ring-bloodRed">
+                                <span class="text-slate-700">${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            html += `
+                <button onclick="submitQuiz('${type}')" class="px-6 py-3 bg-bloodRed hover:bg-rose-600 text-white font-bold rounded-xl text-xs shadow-md transition">
+                    Selesaikan & Kirim ${type === 'pretest' ? 'Pre-Test' : 'Post-Test'}
+                </button>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function submitQuiz(type) {
+            let score = 0;
+            let correctCount = 0;
+
+            QUIZ_QUESTIONS.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="${type}-q${idx}"]:checked`);
+                if (selected && parseInt(selected.value) === q.correct) {
+                    score += 10;
+                    correctCount++;
+                }
+            });
+
+            if (type === 'pretest') {
+                state.pretestScore = score;
+                localStorage.setItem('pretest_score', score);
+                document.getElementById('stat-pretest-score').innerText = `${score}/100`;
+                alert(`Pre-Test Selesai! Nilai Anda: ${score}`);
+                sendToGoogleSheets('PRETEST', { nama: state.student.name, kelas: state.student.class, absen: state.student.absen, nilai: score, benar: correctCount, salah: 10 - correctCount, persentase: score });
+            } else {
+                state.posttestScore = score;
+                localStorage.setItem('posttest_score', score);
+                document.getElementById('stat-posttest-score').innerText = `${score}/100`;
+                alert(`Post-Test Selesai! Nilai Anda: ${score}`);
+                sendToGoogleSheets('POSTTEST', { nama: state.student.name, kelas: state.student.class, absen: state.student.absen, nilai: score, benar: correctCount, salah: 10 - correctCount, persentase: score });
+            }
+
+            addXP(score);
+            navigateTo('hasil');
+        }
+
+        /* ==================== REPORT & BADGES ==================== */
+        function renderBadges() {
+            const badges = [
+                { id: 'b1', name: '❤️ Penjelajah Jantung' },
+                { id: 'b2', name: '🩸 Ahli Darah' },
+                { id: 'b3', name: '🔵 Master Pembuluh' },
+                { id: 'b4', name: '💚 Duta Hidup Sehat' }
+            ];
+
+            document.getElementById('badges-container').innerHTML = badges.map(b => `
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                    ${b.name}
+                </span>
+            `).join('');
+        }
+
+        function updateReportView() {
+            document.getElementById('print-date').innerText = `Tanggal: ${new Date().toLocaleDateString('id-ID')}`;
+            document.getElementById('print-school').innerText = CONFIG.SCHOOL_NAME;
+            document.getElementById('print-name').innerText = state.student.name || 'Siswa Tamu';
+            document.getElementById('print-class').innerText = `${state.student.class || '-'} / Absen ${state.student.absen || '-'}`;
+            document.getElementById('print-level').innerText = `Level ${state.student.level || 1}`;
+
+            const pre = parseInt(state.pretestScore) || 0;
+            const post = parseInt(state.posttestScore) || 0;
+            const gain = post - pre;
+
+            document.getElementById('print-pretest-score').innerText = pre;
+            document.getElementById('print-posttest-score').innerText = post;
+            document.getElementById('print-delta-score').innerText = (gain >= 0 ? `+${gain}` : `${gain}`);
+        }
+
+        function saveReflection() {
+            const r1 = document.getElementById('refl-1').value;
+            const r2 = document.getElementById('refl-2').value;
+            sendToGoogleSheets('REFLEKSI', { nama: state.student.name, kelas: state.student.class, refleksi1: r1, refleksi2: r2 });
+            alert("Refleksi belajar berhasil disimpan dan dikirim!");
+        }
+
+        /* ==================== TEACHER DASHBOARD ==================== */
+        function syncTeacherDashboard() {
+            const body = document.getElementById('dash-student-table-body');
+            body.innerHTML = `
+                <tr>
+                    <td class="p-3 font-bold text-slate-800">${state.student.name || 'Siswa Tamu'}</td>
+                    <td class="p-3">${state.student.class || '-'}</td>
+                    <td class="p-3">${state.student.absen || '-'}</td>
+                    <td class="p-3 text-orange-600 font-bold">${state.pretestScore || 0}</td>
+                    <td class="p-3 text-emerald-600 font-bold">${state.posttestScore || 0}</td>
+                    <td class="p-3 text-blue-600 font-bold">${(state.posttestScore || 0) - (state.pretestScore || 0)}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">Tersimpan</span></td>
+                </tr>
+            `;
+
+            document.getElementById('dash-avg-pretest').innerText = state.pretestScore || 0;
+            document.getElementById('dash-avg-posttest').innerText = state.posttestScore || 0;
+            document.getElementById('dash-avg-gain').innerText = `+${(state.posttestScore || 0) - (state.pretestScore || 0)}`;
+        }
+
+        /* ==================== GOOGLE SHEETS API INTEGRATION ==================== */
+        function sendToGoogleSheets(action, payload) {
+            if (!CONFIG.GOOGLE_SCRIPT_URL) {
+                console.log('Google Script URL belum dikonfigurasi. Data disimpan di LocalStorage.', payload);
+                document.getElementById('sheet-sync-status').innerHTML = `<i class="fa-solid fa-hard-drive text-amber-500 mr-1"></i> Lokal (Offline)`;
+                return;
+            }
+
+            payload.action = action;
+            fetch(CONFIG.GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                document.getElementById('sheet-sync-status').innerHTML = `<i class="fa-solid fa-cloud-check text-emerald-500 mr-1"></i> Terhubung & Tersinkron`;
+            }).catch(err => console.error('Gagal mengirim data:', err));
+        }
+
+        function openGoogleDocs() {
+            if (CONFIG.GOOGLE_DOCS_URL) {
+                window.open(CONFIG.GOOGLE_DOCS_URL, '_blank');
+            } else {
+                alert('URL Google Docs belum dikonfigurasi oleh Guru pada variabel CONFIG.');
+            }
+        }
+    </script>
+</body>
+</html>
